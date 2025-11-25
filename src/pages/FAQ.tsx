@@ -5,11 +5,11 @@ import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { faqs as staticFaqs } from '../data/faqs';
 import { useAppStore } from '../store/appStore';
 import { db } from '../config/firebase';
-import type { FAQ } from '../types';
+import type { FAQ as FAQType } from '../types';
 
 export const FAQ = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
-  const [faqs, setFaqs] = useState<FAQ[]>(staticFaqs);
+  const [faqs, setFaqs] = useState<FAQType[]>(staticFaqs);
   const [loading, setLoading] = useState(true);
   const { settings } = useAppStore();
 
@@ -21,7 +21,7 @@ export const FAQ = () => {
         const dynamicFaqs = faqsSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
-        })) as FAQ[];
+        })) as FAQType[];
         
         // Combine static FAQs with dynamic ones from admin replies
         setFaqs([...dynamicFaqs, ...staticFaqs]);

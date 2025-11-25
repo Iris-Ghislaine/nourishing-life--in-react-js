@@ -21,7 +21,7 @@ export const Rating = () => {
 
     setLoading(true);
     try {
-      await addDoc(collection(db, 'feedback'), {
+      const feedbackData = {
         userId: user.id,
         userName: user.name,
         userEmail: user.email,
@@ -29,7 +29,11 @@ export const Rating = () => {
         message: message.trim() || 'No additional comments',
         status: 'pending',
         createdAt: new Date(),
-      });
+      };
+      
+      console.log('Submitting feedback:', feedbackData);
+      const docRef = await addDoc(collection(db, 'feedback'), feedbackData);
+      console.log('Feedback submitted with ID:', docRef.id);
 
       setSubmitted(true);
       

@@ -2,7 +2,8 @@ import { motion } from 'framer-motion';
 import { Users, Activity, Heart, Plus, MessageSquare, Reply } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { collection, getDocs, updateDoc, doc, addDoc } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, updateDoc, doc, addDoc, where } from 'firebase/firestore';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useAuthStore } from '../store/authstore';
 import { useAppStore } from '../store/appStore';
 import { db } from '../config/firebase';
@@ -23,27 +24,60 @@ export const AdminDashboard = () => {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [replyText, setReplyText] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
+  const [chartData, setChartData] = useState({
+    overview: [] as any[],
+    feedback: [] as any[]
+  });
+
+  const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444'];
 
   const fetchStats = async () => {
     try {
+      // Get all users
       const usersSnapshot = await getDocs(collection(db, 'users'));
-      const feedbackSnapshot = await getDocs(collection(db, 'feedback'));
+      const totalUsers = usersSnapshot.size;
+      console.log('Total users from Firebase:', totalUsers);
+      
+      // Get feedback data
+      const feedbackQuery = query(collection(db, 'feedback'), orderBy('createdAt', 'desc'));
+      const feedbackSnapshot = await getDocs(feedbackQuery);
+      
+      const feedbackData = feedbackSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate() || new Date(),
+          repliedAt: data.repliedAt?.toDate(),
+        };
+      }) as Feedback[];
+      
+      // Calculate feedback stats
+      const pendingFeedback = feedbackData.filter(f => f.status === 'pending').length;
+      const repliedFeedback = feedbackData.filter(f => f.status === 'replied').length;
       
       setStats({
-        totalUsers: usersSnapshot.size,
-        activeUsers: usersSnapshot.size, // For now, consider all users as active
+        totalUsers,
+        activeUsers: totalUsers, // For now, consider all users as active
         totalDiseases: diseases.length,
         totalMeals: allMeals.length,
       });
       
-      const feedbackData = feedbackSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-        repliedAt: doc.data().repliedAt?.toDate(),
-      })) as Feedback[];
+      // Prepare chart data
+      setChartData({
+        overview: [
+          { name: 'Users', value: totalUsers, color: '#10B981' },
+          { name: 'Diseases', value: diseases.length, color: '#3B82F6' },
+          { name: 'Meals', value: allMeals.length, color: '#F59E0B' },
+          { name: 'Feedback', value: feedbackData.length, color: '#EF4444' }
+        ],
+        feedback: [
+          { name: 'Pending', value: pendingFeedback, color: '#F59E0B' },
+          { name: 'Replied', value: repliedFeedback, color: '#10B981' }
+        ]
+      });
       
-      setFeedbacks(feedbackData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
+      setFeedbacks(feedbackData);
     } catch (error) {
       console.error('Error fetching stats:', error);
     } finally {
@@ -112,8 +146,9 @@ export const AdminDashboard = () => {
           </p>
         </motion.div>
 
-        {/* Stats Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Charts Section */}
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          {/* Overview Chart */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -122,20 +157,38 @@ export const AdminDashboard = () => {
               settings.darkMode ? 'bg-gray-800' : 'bg-white'
             } shadow-lg`}
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-blue-500 flex items-center justify-center">
-                <Users className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-2xl font-bold text-blue-500">{stats.totalUsers}</span>
-            </div>
-            <h3 className={`font-semibold ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>
-              Total Users
+            <h3 className={`text-xl font-bold mb-4 ${
+              settings.darkMode ? 'text-white' : 'text-gray-900'
+            }`}>
+              System Overview
             </h3>
-            <p className={`text-sm ${settings.darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Registered accounts
-            </p>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartData.overview}>
+                <CartesianGrid strokeDasharray="3 3" stroke={settings.darkMode ? '#374151' : '#E5E7EB'} />
+                <XAxis 
+                  dataKey="name" 
+                  stroke={settings.darkMode ? '#9CA3AF' : '#6B7280'}
+                  fontSize={12}
+                />
+                <YAxis stroke={settings.darkMode ? '#9CA3AF' : '#6B7280'} fontSize={12} />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: settings.darkMode ? '#1F2937' : '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: settings.darkMode ? '#FFFFFF' : '#000000'
+                  }}
+                />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  {chartData.overview.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </motion.div>
 
+          {/* Feedback Status Chart */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -144,63 +197,70 @@ export const AdminDashboard = () => {
               settings.darkMode ? 'bg-gray-800' : 'bg-white'
             } shadow-lg`}
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-green-500 flex items-center justify-center">
-                <Activity className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-2xl font-bold text-green-500">{stats.activeUsers}</span>
-            </div>
-            <h3 className={`font-semibold ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>
-              Active Users
+            <h3 className={`text-xl font-bold mb-4 ${
+              settings.darkMode ? 'text-white' : 'text-gray-900'
+            }`}>
+              Feedback Status
             </h3>
-            <p className={`text-sm ${settings.darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Last 30 days
-            </p>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={chartData.feedback}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={120}
+                  paddingAngle={5}
+                  dataKey="value"
+                  label={({ name, value }) => `${name}: ${value}`}
+                  labelStyle={{ 
+                    fontSize: '12px', 
+                    fill: settings.darkMode ? '#FFFFFF' : '#000000' 
+                  }}
+                >
+                  {chartData.feedback.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: settings.darkMode ? '#1F2937' : '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: settings.darkMode ? '#FFFFFF' : '#000000'
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
           </motion.div>
+        </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className={`p-6 rounded-2xl ${
-              settings.darkMode ? 'bg-gray-800' : 'bg-white'
-            } shadow-lg`}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-pink-500 flex items-center justify-center">
-                <Heart className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-2xl font-bold text-pink-500">{stats.totalDiseases}</span>
-            </div>
-            <h3 className={`font-semibold ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>
-              Diseases
-            </h3>
-            <p className={`text-sm ${settings.darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Supported conditions
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className={`p-6 rounded-2xl ${
-              settings.darkMode ? 'bg-gray-800' : 'bg-white'
-            } shadow-lg`}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-orange-500 flex items-center justify-center">
-                <span className="text-white text-xl">🍽️</span>
-              </div>
-              <span className="text-2xl font-bold text-orange-500">{stats.totalMeals}</span>
-            </div>
-            <h3 className={`font-semibold ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>
-              Total Meals
-            </h3>
-            <p className={`text-sm ${settings.darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              All recommendations
-            </p>
-          </motion.div>
+        {/* Quick Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className={`p-4 rounded-xl ${
+            settings.darkMode ? 'bg-gray-800' : 'bg-white'
+          } shadow text-center`}>
+            <div className="text-2xl font-bold text-green-500">{stats.totalUsers}</div>
+            <div className={`text-sm ${settings.darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Users</div>
+          </div>
+          <div className={`p-4 rounded-xl ${
+            settings.darkMode ? 'bg-gray-800' : 'bg-white'
+          } shadow text-center`}>
+            <div className="text-2xl font-bold text-blue-500">{stats.totalDiseases}</div>
+            <div className={`text-sm ${settings.darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Diseases</div>
+          </div>
+          <div className={`p-4 rounded-xl ${
+            settings.darkMode ? 'bg-gray-800' : 'bg-white'
+          } shadow text-center`}>
+            <div className="text-2xl font-bold text-orange-500">{stats.totalMeals}</div>
+            <div className={`text-sm ${settings.darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Meals</div>
+          </div>
+          <div className={`p-4 rounded-xl ${
+            settings.darkMode ? 'bg-gray-800' : 'bg-white'
+          } shadow text-center`}>
+            <div className="text-2xl font-bold text-red-500">{feedbacks.length}</div>
+            <div className={`text-sm ${settings.darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Feedback</div>
+          </div>
         </div>
 
         {/* Disease Management */}
