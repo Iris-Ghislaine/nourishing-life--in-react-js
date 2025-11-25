@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, Phone, UserPlus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAppStore } from '../store/appStore'
+import { useAppStore } from '../store/appStore';
+import { useAuthStore } from '../store/authstore';
 
 export const SignUp = () => {
   const [formData, setFormData] = useState({
@@ -13,22 +14,35 @@ export const SignUp = () => {
     confirmPassword: '',
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const { settings } = useAppStore();
+  const { register } = useAuthStore();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
+      setLoading(false);
       return;
     }
 
-    // In a real app, this would create the account
-    // For now, we'll just show a success message and redirect
-    alert('Account created successfully! Please sign in.');
-    navigate('/signin');
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters');
+      setLoading(false);
+      return;
+    }
+
+    const success = await register(formData.email, formData.password, formData.name, formData.phone);
+    if (success) {
+      navigate('/');
+    } else {
+      setError('Failed to create account. Please try again.');
+    }
+    setLoading(false);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -187,10 +201,11 @@ export const SignUp = () => {
 
           <button
             type="submit"
-            className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition"
+            disabled={loading}
+            className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition disabled:opacity-50"
           >
             <UserPlus className="w-5 h-5" />
-            Create Account
+            {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
 

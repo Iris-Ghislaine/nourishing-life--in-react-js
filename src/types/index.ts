@@ -60,3 +60,15 @@ export interface UserSettings {
   darkMode: boolean;
   notifications: NotificationSettings;
 }
+
+export interface Feedback {
+  id: string;
+  userId: string;
+  userName: string;
+  message: string;
+  rating: number;
+  status: 'pending' | 'replied';
+  adminReply?: string;
+  createdAt: Date;
+  repliedAt?: Date;
+}

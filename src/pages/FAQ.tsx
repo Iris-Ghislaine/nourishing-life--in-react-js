@@ -1,12 +1,41 @@
 import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
-import { useState } from 'react';
-import { faqs } from '../data/faqs';
+import { useState, useEffect } from 'react';
+import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { faqs as staticFaqs } from '../data/faqs';
 import { useAppStore } from '../store/appStore';
+import { db } from '../config/firebase';
+import type { FAQ } from '../types';
 
 export const FAQ = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [faqs, setFaqs] = useState<FAQ[]>(staticFaqs);
+  const [loading, setLoading] = useState(true);
   const { settings } = useAppStore();
+
+  useEffect(() => {
+    const fetchFaqs = async () => {
+      try {
+        const faqsQuery = query(collection(db, 'faqs'), orderBy('createdAt', 'desc'));
+        const faqsSnapshot = await getDocs(faqsQuery);
+        const dynamicFaqs = faqsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as FAQ[];
+        
+        // Combine static FAQs with dynamic ones from admin replies
+        setFaqs([...dynamicFaqs, ...staticFaqs]);
+      } catch (error) {
+        console.error('Error fetching FAQs:', error);
+        // Keep static FAQs if Firebase fails
+        setFaqs(staticFaqs);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFaqs();
+  }, []);
 
   return (
     <div className={`min-h-screen ${
@@ -24,12 +53,20 @@ export const FAQ = () => {
             Frequently Asked Questions
           </h1>
           <p className={`text-xl ${settings.darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-            Find answers to common questions about HealthEats
+            Find answers to common questions about Nourishing Life
           </p>
         </motion.div>
 
-        <div className="space-y-4">
-          {faqs.map((faq, index) => (
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto"></div>
+            <p className={`mt-2 ${settings.darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+              Loading FAQs...
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {faqs.map((faq, index) => (
             <motion.div
               key={faq.id}
               initial={{ opacity: 0, y: 20 }}
@@ -70,7 +107,8 @@ export const FAQ = () => {
               </motion.div>
             </motion.div>
           ))}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

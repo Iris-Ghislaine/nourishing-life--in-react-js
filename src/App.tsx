@@ -15,8 +15,12 @@ import { useEffect } from 'react';
 import { About } from './pages/about';
 
 function App() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, loading, initializeAuth } = useAuthStore();
   const { settings } = useAppStore();
+
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
 
   useEffect(() => {
     if (settings.darkMode) {
@@ -25,6 +29,17 @@ function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [settings.darkMode]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Router>

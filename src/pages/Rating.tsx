@@ -1,40 +1,50 @@
 import { motion } from 'framer-motion';
 import { Star, Send } from 'lucide-react';
 import { useState } from 'react';
+import { addDoc, collection } from 'firebase/firestore';
 import { useAppStore } from '../store/appStore';
 import { useAuthStore } from '../store/authstore';
+import { db } from '../config/firebase';
 
 export const Rating = () => {
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { settings } = useAppStore();
   const { user } = useAuthStore();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
 
-    // In a real app, this would send to backend which emails the admin
-    const formData = {
-      userId: user?.id,
-      userName: user?.name,
-      userEmail: user?.email,
-      rating,
-      message,
-      timestamp: new Date().toISOString(),
-    };
+    setLoading(true);
+    try {
+      await addDoc(collection(db, 'feedback'), {
+        userId: user.id,
+        userName: user.name,
+        userEmail: user.email,
+        rating,
+        message: message.trim() || 'No additional comments',
+        status: 'pending',
+        createdAt: new Date(),
+      });
 
-    console.log('Rating submission:', formData);
-    alert(`Thank you for your ${rating}-star rating! Your feedback has been submitted.`);
-    setSubmitted(true);
-    
-    // Reset form after 3 seconds
-    setTimeout(() => {
-      setRating(0);
-      setMessage('');
-      setSubmitted(false);
-    }, 3000);
+      setSubmitted(true);
+      
+      // Reset form after 3 seconds
+      setTimeout(() => {
+        setRating(0);
+        setMessage('');
+        setSubmitted(false);
+      }, 3000);
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      alert('Failed to submit feedback. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -83,7 +93,7 @@ export const Rating = () => {
                 <label className={`block text-lg font-semibold mb-4 text-center ${
                   settings.darkMode ? 'text-white' : 'text-gray-900'
                 }`}>
-                  How would you rate HealthEats?
+                  How would you rate Nourisning Life?
                 </label>
                 <div className="flex justify-center gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -137,23 +147,23 @@ export const Rating = () => {
                       ? 'bg-gray-700 border-gray-600 text-white'
                       : 'bg-white border-gray-300'
                   } focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none`}
-                  placeholder="Tell us what you think... suggestions, concerns, or what you love about HealthEats!"
+                  placeholder="Tell us what you think... suggestions, concerns, or what you love about Nourisning Life!"
                 />
               </div>
 
               <button
                 type="submit"
-                disabled={rating === 0}
+                disabled={rating === 0 || loading}
                 className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-semibold text-lg flex items-center justify-center gap-2 hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send className="w-5 h-5" />
-                Submit Feedback
+                {loading ? 'Submitting...' : 'Submit Feedback'}
               </button>
 
               <p className={`text-sm text-center mt-4 ${
                 settings.darkMode ? 'text-gray-400' : 'text-gray-500'
               }`}>
-                Your feedback will be sent to our team and help us improve HealthEats.
+                Your feedback will be sent to our team and help us improve Nourisning Life.
               </p>
             </form>
           )}

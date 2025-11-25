@@ -9,6 +9,7 @@ export const SignIn = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const { login } = useAuthStore();
   const { settings } = useAppStore();
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export const SignIn = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
     const success = await login(email, password);
     if (success) {
@@ -23,6 +25,7 @@ export const SignIn = () => {
     } else {
       setError('Invalid email or password');
     }
+    setLoading(false);
   };
 
   return (
@@ -100,10 +103,11 @@ export const SignIn = () => {
 
           <button
             type="submit"
-            className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition"
+            disabled={loading}
+            className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition disabled:opacity-50"
           >
             <LogIn className="w-5 h-5" />
-            Sign In
+            {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 
@@ -116,15 +120,7 @@ export const SignIn = () => {
           </p>
         </div>
 
-        <div className={`mt-6 p-4 rounded-xl ${
-          settings.darkMode ? 'bg-gray-700' : 'bg-gray-50'
-        }`}>
-          <p className="text-sm font-medium mb-2">Demo Accounts:</p>
-          <div className="space-y-1 text-xs">
-            <p><strong>Admin:</strong> health@gmail.com / admin</p>
-            <p><strong>User:</strong> user@example.com / user</p>
-          </div>
-        </div>
+
       </motion.div>
     </div>
   );

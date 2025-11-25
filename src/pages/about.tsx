@@ -43,13 +43,13 @@ export const About = () => {
           }`}>
             About{' '}
             <span className="bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent">
-              HealthEats
+              NourishingLife
             </span>
           </h1>
           <p className={`text-xl leading-relaxed ${
             settings.darkMode ? 'text-gray-300' : 'text-gray-600'
           }`}>
-            HealthEats is your companion in managing chronic diseases through proper nutrition. We believe that food is medicine, and we're here to make healthy eating accessible, practical, and delicious for everyone.
+            NourishingLife is your companion in managing chronic diseases through proper nutrition. We believe that food is medicine, and we're here to make healthy eating accessible, practical, and delicious for everyone.
           </p>
         </motion.div>
 
@@ -93,7 +93,7 @@ export const About = () => {
           <h2 className={`text-3xl font-bold mb-6 ${
             settings.darkMode ? 'text-white' : 'text-gray-900'
           }`}>
-            Why Choose HealthEats?
+            Why Choose NourishingLife?
           </h2>
           <div className="space-y-4">
             <div>

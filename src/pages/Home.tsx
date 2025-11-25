@@ -35,7 +35,7 @@ export const Home = () => {
           }`}>
             Welcome to{' '}
             <span className="bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent">
-              HealthEats
+              Nourishing Life
             </span>
           </h1>
           <p className={`text-xl ${settings.darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -85,7 +85,7 @@ export const Home = () => {
           <h2 className={`text-2xl font-bold mb-4 ${
             settings.darkMode ? 'text-white' : 'text-gray-900'
           }`}>
-            Why Choose HealthEats?
+            Why Choose Nourishing Life?
           </h2>
           <div className="space-y-4">
             <div className="flex items-start gap-3">
