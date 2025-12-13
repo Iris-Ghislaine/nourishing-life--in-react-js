@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/appStore';
 import { useAuthStore } from '../store/authstore';
+import { ChangePassword } from '../components/ChangePassword';
 
 
 export const Settings = () => {
@@ -11,6 +12,7 @@ export const Settings = () => {
   const { user, updateProfile, logout } = useAuthStore();
   const navigate = useNavigate();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
     phone: user?.phone || '',
@@ -55,7 +57,7 @@ export const Settings = () => {
   };
 
   const handleChangePassword = () => {
-    alert('Password change via OTP will be implemented with backend integration');
+    setIsChangePasswordOpen(true);
   };
 
   return (
@@ -341,6 +343,11 @@ export const Settings = () => {
           </div>
         </motion.div>
       </div>
+      
+      <ChangePassword 
+        isOpen={isChangePasswordOpen} 
+        onClose={() => setIsChangePasswordOpen(false)} 
+      />
     </div>
   );
 };

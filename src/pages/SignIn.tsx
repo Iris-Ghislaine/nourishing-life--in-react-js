@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authstore';
 import { useAppStore } from '../store/appStore';
 import { signInSchema, type SignInFormData } from '../lib/validations';
+import { ForgotPassword } from '../components/ForgotPassword';
 
 export const SignIn = () => {
   const [formData, setFormData] = useState<SignInFormData>({
@@ -15,6 +16,7 @@ export const SignIn = () => {
   });
   const [errors, setErrors] = useState<Partial<SignInFormData>>({});
   const [loading, setLoading] = useState(false);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const { login } = useAuthStore();
   const { settings } = useAppStore();
   const navigate = useNavigate();
@@ -134,6 +136,16 @@ export const SignIn = () => {
             )}
           </div>
 
+          <div className="text-right">
+            <button
+              type="button"
+              onClick={() => setIsForgotPasswordOpen(true)}
+              className="text-sm text-green-600 hover:underline"
+            >
+              Forgot Password?
+            </button>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
@@ -152,9 +164,12 @@ export const SignIn = () => {
             </Link>
           </p>
         </div>
-
-
       </motion.div>
+      
+      <ForgotPassword 
+        isOpen={isForgotPasswordOpen} 
+        onClose={() => setIsForgotPasswordOpen(false)} 
+      />
     </div>
   );
 };
