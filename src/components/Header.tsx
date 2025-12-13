@@ -40,7 +40,15 @@ export const Header = () => {
                   <Link to="/admin" className="hover:text-green-600 transition">Dashboard</Link>
                 )}
                 <Link to="/settings" className="hover:text-green-600 transition">
-                  <User className="w-5 h-5" />
+                  {user?.profileImage ? (
+                    <img
+                      src={user.profileImage}
+                      alt="Profile"
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-5 h-5" />
+                  )}
                 </Link>
               </>
             )}

@@ -25,6 +25,8 @@ interface AuthState {
   resetPassword: (email: string, newPassword: string) => Promise<boolean>;
   changePassword: (newPassword: string) => Promise<boolean>;
   resetPasswordForCurrentUser: (newPassword: string) => Promise<boolean>;
+  uploadProfileImage: (file: File) => Promise<string | null>;
+  updateProfileImage: (imageUrl: string) => Promise<boolean>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -225,6 +227,46 @@ export const useAuthStore = create<AuthState>()(
           return true;
         } catch (error) {
           console.error('❌ Reset password for current user error:', error);
+          return false;
+        }
+      },
+      uploadProfileImage: async (file: File) => {
+        try {
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const base64String = reader.result as string;
+              resolve(base64String);
+            };
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(file);
+          });
+        } catch (error) {
+          console.error('Upload image error:', error);
+          return null;
+        }
+      },
+      updateProfileImage: async (imageUrl: string) => {
+        try {
+          const { user } = get();
+          const currentUser = auth.currentUser;
+          
+          if (!currentUser || !user) {
+            return false;
+          }
+          
+          await updateDoc(doc(db, 'users', currentUser.uid), {
+            profileImage: imageUrl,
+            updatedAt: new Date()
+          });
+          
+          set((state) => ({
+            user: state.user ? { ...state.user, profileImage: imageUrl } : null
+          }));
+          
+          return true;
+        } catch (error) {
+          console.error('Update profile image error:', error);
           return false;
         }
       },

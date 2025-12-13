@@ -9,10 +9,11 @@ import { ChangePassword } from '../components/ChangePassword';
 
 export const Settings = () => {
   const { settings, toggleDarkMode, updateSettings } = useAppStore();
-  const { user, updateProfile, logout } = useAuthStore();
+  const { user, updateProfile, logout, uploadProfileImage, updateProfileImage } = useAuthStore();
   const navigate = useNavigate();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
     phone: user?.phone || '',
@@ -60,6 +61,42 @@ export const Settings = () => {
     setIsChangePasswordOpen(true);
   };
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB');
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const imageUrl = await uploadProfileImage(file);
+      if (imageUrl) {
+        const success = await updateProfileImage(imageUrl);
+        if (success) {
+          alert('Profile image updated successfully!');
+        } else {
+          alert('Failed to update profile image');
+        }
+      } else {
+        alert('Failed to upload image');
+      }
+    } catch (error) {
+      alert('Error uploading image');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   return (
     <div className={`min-h-screen ${
       settings.darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-green-50 to-emerald-100'
@@ -87,13 +124,35 @@ export const Settings = () => {
 
             <div className="space-y-4">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white text-2xl font-bold">
-                  {user?.name.charAt(0).toUpperCase()}
+                <div className="relative">
+                  {user?.profileImage ? (
+                    <img
+                      src={user.profileImage}
+                      alt="Profile"
+                      className="w-20 h-20 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white text-2xl font-bold">
+                      {user?.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  {uploadingImage && (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                    </div>
+                  )}
                 </div>
-                <button className="flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+                <label className="flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition cursor-pointer">
                   <Camera className="w-4 h-4" />
-                  Change Photo
-                </button>
+                  {uploadingImage ? 'Uploading...' : 'Change Photo'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={uploadingImage}
+                    className="hidden"
+                  />
+                </label>
               </div>
 
               <div>
