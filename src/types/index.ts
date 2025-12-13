@@ -56,6 +56,15 @@ export interface NotificationSettings {
   time: string;
 }
 
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'medicine' | 'meal' | 'general';
+  isRead: boolean;
+  createdAt: Date;
+}
+
 export interface UserSettings {
   darkMode: boolean;
   notifications: NotificationSettings;

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/appStore';
 import { useAuthStore } from '../store/authstore';
+import { NotificationDropdown } from './NotificationDropdown';
 
 
 export const Header = () => {
@@ -43,6 +44,7 @@ export const Header = () => {
                 </Link>
               </>
             )}
+            {isAuthenticated && <NotificationDropdown />}
             <button
               onClick={toggleDarkMode}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
@@ -90,6 +92,11 @@ export const Header = () => {
                 )}
                 <Link to="/settings" className="block py-2 hover:text-green-600 transition">Settings</Link>
               </>
+            )}
+            {isAuthenticated && (
+              <div className="py-2">
+                <NotificationDropdown />
+              </div>
             )}
             <button
               onClick={toggleDarkMode}
