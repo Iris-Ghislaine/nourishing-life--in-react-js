@@ -27,6 +27,7 @@ interface AuthState {
   resetPasswordForCurrentUser: (newPassword: string) => Promise<boolean>;
   uploadProfileImage: (file: File) => Promise<string | null>;
   updateProfileImage: (imageUrl: string) => Promise<boolean>;
+  removeProfileImage: () => Promise<boolean>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -267,6 +268,30 @@ export const useAuthStore = create<AuthState>()(
           return true;
         } catch (error) {
           console.error('Update profile image error:', error);
+          return false;
+        }
+      },
+      removeProfileImage: async () => {
+        try {
+          const { user } = get();
+          const currentUser = auth.currentUser;
+          
+          if (!currentUser || !user) {
+            return false;
+          }
+          
+          await updateDoc(doc(db, 'users', currentUser.uid), {
+            profileImage: null,
+            updatedAt: new Date()
+          });
+          
+          set((state) => ({
+            user: state.user ? { ...state.user, profileImage: undefined } : null
+          }));
+          
+          return true;
+        } catch (error) {
+          console.error('Remove profile image error:', error);
           return false;
         }
       },

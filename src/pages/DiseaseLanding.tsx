@@ -1,8 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { diseases } from '../data/diseases';
-import { cancerMeals } from '../data/meals';
 import { DidYouKnowCard } from '../components/DidYouKnowCard';
 import { MealCard } from '../components/MealCard';
 
@@ -33,7 +31,7 @@ const categoryLabels: Record<MealCategory, string> = {
 export const DiseaseLanding = () => {
   const { diseaseId } = useParams();
   const navigate = useNavigate();
-  const { settings } = useAppStore();
+  const { settings, diseases, meals } = useAppStore();
   const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<MealCategory | null>(null);
 
@@ -46,7 +44,7 @@ export const DiseaseLanding = () => {
 
   // Filter meals by disease and category
   const getMealsByCategory = (category: MealCategory) => {
-    return cancerMeals.filter((meal) => meal.category === category);
+    return meals.filter((meal) => meal.diseaseId === diseaseId && meal.category === category);
   };
 
   const categories: MealCategory[] = ['breakfast', 'lunch', 'dinner', 'snacks', 'drinks', 'vitamins'];

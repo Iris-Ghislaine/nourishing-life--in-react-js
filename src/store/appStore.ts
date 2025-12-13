@@ -1,10 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { diseases } from '../data/diseases';
+import { allMeals } from '../data/meals';
 import type { Disease, Meal, UserSettings, Notification } from '../types/index';
 
 interface AppState {
   selectedDisease: Disease | null;
   meals: Meal[];
+  diseases: Disease[];
   settings: UserSettings;
   notifications: Notification[];
   setSelectedDisease: (disease: Disease | null) => void;
@@ -14,13 +17,20 @@ interface AppState {
   markNotificationAsRead: (id: string) => void;
   clearAllNotifications: () => void;
   getUnreadCount: () => number;
+  addDisease: (disease: Omit<Disease, 'id'>) => void;
+  addMeal: (meal: Omit<Meal, 'id'>) => void;
+  updateDisease: (id: string, updates: Partial<Disease>) => void;
+  updateMeal: (id: string, updates: Partial<Meal>) => void;
+  deleteDisease: (id: string) => void;
+  deleteMeal: (id: string) => void;
 }
 
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
       selectedDisease: null,
-      meals: [],
+      meals: allMeals,
+      diseases: diseases,
       notifications: [],
       settings: {
         darkMode: false,
@@ -99,7 +109,42 @@ export const useAppStore = create<AppState>()(
       getUnreadCount: () => {
         const state = useAppStore.getState();
         return state.notifications.filter(n => !n.isRead).length;
-      }
+      },
+      addDisease: (disease) =>
+        set((state) => ({
+          diseases: [
+            ...state.diseases,
+            { ...disease, id: Date.now().toString() }
+          ]
+        })),
+      addMeal: (meal) =>
+        set((state) => ({
+          meals: [
+            ...state.meals,
+            { ...meal, id: Date.now().toString() }
+          ]
+        })),
+      updateDisease: (id, updates) =>
+        set((state) => ({
+          diseases: state.diseases.map(d =>
+            d.id === id ? { ...d, ...updates } : d
+          )
+        })),
+      updateMeal: (id, updates) =>
+        set((state) => ({
+          meals: state.meals.map(m =>
+            m.id === id ? { ...m, ...updates } : m
+          )
+        })),
+      deleteDisease: (id) =>
+        set((state) => ({
+          diseases: state.diseases.filter(d => d.id !== id),
+          meals: state.meals.filter(m => m.diseaseId !== id)
+        })),
+      deleteMeal: (id) =>
+        set((state) => ({
+          meals: state.meals.filter(m => m.id !== id)
+        }))
     }),
     {
       name: 'app-storage',

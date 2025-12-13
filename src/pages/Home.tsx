@@ -1,15 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { diseases } from '../data/diseases';
 import { useAppStore } from '../store/appStore';
 import { useAuthStore } from '../store/authstore';
 
 export const Home = () => {
   const navigate = useNavigate();
-  const { setSelectedDisease, settings } = useAppStore();
+  const { setSelectedDisease, settings, diseases } = useAppStore();
   const { isAuthenticated } = useAuthStore();
 
-  const handleDiseaseClick = (disease: typeof diseases[0]) => {
+  const handleDiseaseClick = (disease: any) => {
     if (!isAuthenticated) {
       navigate('/signin');
       return;

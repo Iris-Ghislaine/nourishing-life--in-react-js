@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
-import { Moon, Sun, Bell, Lock, User, LogOut, Camera, Phone } from 'lucide-react';
+import { Moon, Sun, Bell, Lock, User, LogOut, Camera, Phone, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAppStore } from '../store/appStore';
 import { useAuthStore } from '../store/authstore';
 import { ChangePassword } from '../components/ChangePassword';
@@ -9,7 +10,7 @@ import { ChangePassword } from '../components/ChangePassword';
 
 export const Settings = () => {
   const { settings, toggleDarkMode, updateSettings } = useAppStore();
-  const { user, updateProfile, logout, uploadProfileImage, updateProfileImage } = useAuthStore();
+  const { user, updateProfile, logout, uploadProfileImage, updateProfileImage, removeProfileImage } = useAuthStore();
   const navigate = useNavigate();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
@@ -49,7 +50,7 @@ export const Settings = () => {
   const handleProfileUpdate = () => {
     updateProfile(profileData);
     setIsEditingProfile(false);
-    alert('Profile updated successfully!');
+    toast.success('Profile updated successfully!');
   };
 
   const handleLogout = () => {
@@ -67,13 +68,13 @@ export const Settings = () => {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      toast.error('Please select an image file');
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image size should be less than 5MB');
+      toast.error('Image size should be less than 5MB');
       return;
     }
 
@@ -83,15 +84,31 @@ export const Settings = () => {
       if (imageUrl) {
         const success = await updateProfileImage(imageUrl);
         if (success) {
-          alert('Profile image updated successfully!');
+          toast.success('Profile image updated successfully!');
         } else {
-          alert('Failed to update profile image');
+          toast.error('Failed to update profile image');
         }
       } else {
-        alert('Failed to upload image');
+        toast.error('Failed to upload image');
       }
     } catch (error) {
-      alert('Error uploading image');
+      toast.error('Error uploading image');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    setUploadingImage(true);
+    try {
+      const success = await removeProfileImage();
+      if (success) {
+        toast.success('Profile image removed successfully!');
+      } else {
+        toast.error('Failed to remove profile image');
+      }
+    } catch (error) {
+      toast.error('Error removing image');
     } finally {
       setUploadingImage(false);
     }
@@ -142,17 +159,29 @@ export const Settings = () => {
                     </div>
                   )}
                 </div>
-                <label className="flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition cursor-pointer">
-                  <Camera className="w-4 h-4" />
-                  {uploadingImage ? 'Uploading...' : 'Change Photo'}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    disabled={uploadingImage}
-                    className="hidden"
-                  />
-                </label>
+                <div className="flex gap-2">
+                  <label className="flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition cursor-pointer">
+                    <Camera className="w-4 h-4" />
+                    {uploadingImage ? 'Uploading...' : 'Change Photo'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={uploadingImage}
+                      className="hidden"
+                    />
+                  </label>
+                  {user?.profileImage && (
+                    <button
+                      onClick={handleRemoveImage}
+                      disabled={uploadingImage}
+                      className="flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition disabled:opacity-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Remove
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div>
