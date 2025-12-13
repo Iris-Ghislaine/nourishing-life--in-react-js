@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Star, Send } from 'lucide-react';
 import { useState } from 'react';
 import { addDoc, collection } from 'firebase/firestore';
+import toast from 'react-hot-toast';
 import { useAppStore } from '../store/appStore';
 import { useAuthStore } from '../store/authstore';
 import { db } from '../config/firebase';
@@ -36,6 +37,7 @@ export const Rating = () => {
       console.log('Feedback submitted with ID:', docRef.id);
 
       setSubmitted(true);
+      toast.success(`Thank you for your ${rating}-star rating! 🎆 Your feedback helps us improve HealthEats.`);
       
       // Reset form after 3 seconds
       setTimeout(() => {
@@ -45,7 +47,7 @@ export const Rating = () => {
       }, 3000);
     } catch (error) {
       console.error('Error submitting feedback:', error);
-      alert('Failed to submit feedback. Please try again.');
+      toast.error('Failed to submit feedback. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }

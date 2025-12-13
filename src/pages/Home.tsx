@@ -1,7 +1,5 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-
-import { useEffect } from 'react';
 import { diseases } from '../data/diseases';
 import { useAppStore } from '../store/appStore';
 import { useAuthStore } from '../store/authstore';
@@ -11,13 +9,11 @@ export const Home = () => {
   const { setSelectedDisease, settings } = useAppStore();
   const { isAuthenticated } = useAuthStore();
 
-  useEffect(() => {
+  const handleDiseaseClick = (disease: typeof diseases[0]) => {
     if (!isAuthenticated) {
       navigate('/signin');
+      return;
     }
-  }, [isAuthenticated, navigate]);
-
-  const handleDiseaseClick = (disease: typeof diseases[0]) => {
     setSelectedDisease(disease);
     navigate(`/disease/${disease.id}`);
   };

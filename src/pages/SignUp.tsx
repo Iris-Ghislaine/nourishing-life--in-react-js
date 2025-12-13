@@ -1,19 +1,22 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, Phone, UserPlus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAppStore } from '../store/appStore';
 import { useAuthStore } from '../store/authstore';
+import { signUpSchema, type SignUpFormData } from '../lib/validations';
 
 export const SignUp = () => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<SignUpFormData>({
     name: '',
     email: '',
     phone: '',
     password: '',
     confirmPassword: '',
   });
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState<Partial<SignUpFormData>>({});
   const [loading, setLoading] = useState(false);
   const { settings } = useAppStore();
   const { register } = useAuthStore();
@@ -21,28 +24,41 @@ export const SignUp = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setErrors({});
     setLoading(true);
 
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+    try {
+      const validatedData = signUpSchema.parse(formData);
+      
+      const success = await register(
+        validatedData.email, 
+        validatedData.password, 
+        validatedData.name, 
+        validatedData.phone
+      );
+      
+      if (success) {
+        toast.success('🎉 Account created successfully! Welcome to HealthEats!');
+        navigate('/');
+      } else {
+        toast.error('Failed to create account. Email may already be in use.');
+      }
+    } catch (error: any) {
+      if (error.errors) {
+        const fieldErrors: Partial<SignUpFormData> = {};
+        error.errors.forEach((err: any) => {
+          if (err.path[0]) {
+            fieldErrors[err.path[0] as keyof SignUpFormData] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+        toast.error('Please fix the form errors');
+      } else {
+        toast.error('An unexpected error occurred');
+      }
+    } finally {
       setLoading(false);
-      return;
     }
-
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
-      setLoading(false);
-      return;
-    }
-
-    const success = await register(formData.email, formData.password, formData.name, formData.phone);
-    if (success) {
-      navigate('/');
-    } else {
-      setError('Failed to create account. Please try again.');
-    }
-    setLoading(false);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,11 +88,7 @@ export const SignUp = () => {
           </p>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
-            {error}
-          </div>
-        )}
+
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -93,6 +105,7 @@ export const SignUp = () => {
                 value={formData.name}
                 onChange={handleChange}
                 className={`w-full pl-10 pr-4 py-3 rounded-xl border ${
+                  errors.name ? 'border-red-500' : 
                   settings.darkMode
                     ? 'bg-gray-700 border-gray-600 text-white'
                     : 'bg-white border-gray-300'
@@ -101,6 +114,9 @@ export const SignUp = () => {
                 required
               />
             </div>
+            {errors.name && (
+              <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+            )}
           </div>
 
           <div>
@@ -117,6 +133,7 @@ export const SignUp = () => {
                 value={formData.email}
                 onChange={handleChange}
                 className={`w-full pl-10 pr-4 py-3 rounded-xl border ${
+                  errors.email ? 'border-red-500' :
                   settings.darkMode
                     ? 'bg-gray-700 border-gray-600 text-white'
                     : 'bg-white border-gray-300'
@@ -125,6 +142,9 @@ export const SignUp = () => {
                 required
               />
             </div>
+            {errors.email && (
+              <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+            )}
           </div>
 
           <div>
@@ -141,6 +161,7 @@ export const SignUp = () => {
                 value={formData.phone}
                 onChange={handleChange}
                 className={`w-full pl-10 pr-4 py-3 rounded-xl border ${
+                  errors.phone ? 'border-red-500' :
                   settings.darkMode
                     ? 'bg-gray-700 border-gray-600 text-white'
                     : 'bg-white border-gray-300'
@@ -149,6 +170,9 @@ export const SignUp = () => {
                 required
               />
             </div>
+            {errors.phone && (
+              <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+            )}
           </div>
 
           <div>
@@ -165,6 +189,7 @@ export const SignUp = () => {
                 value={formData.password}
                 onChange={handleChange}
                 className={`w-full pl-10 pr-4 py-3 rounded-xl border ${
+                  errors.password ? 'border-red-500' :
                   settings.darkMode
                     ? 'bg-gray-700 border-gray-600 text-white'
                     : 'bg-white border-gray-300'
@@ -173,6 +198,9 @@ export const SignUp = () => {
                 required
               />
             </div>
+            {errors.password && (
+              <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+            )}
           </div>
 
           <div>
@@ -189,6 +217,7 @@ export const SignUp = () => {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 className={`w-full pl-10 pr-4 py-3 rounded-xl border ${
+                  errors.confirmPassword ? 'border-red-500' :
                   settings.darkMode
                     ? 'bg-gray-700 border-gray-600 text-white'
                     : 'bg-white border-gray-300'
@@ -197,6 +226,9 @@ export const SignUp = () => {
                 required
               />
             </div>
+            {errors.confirmPassword && (
+              <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>
+            )}
           </div>
 
           <button

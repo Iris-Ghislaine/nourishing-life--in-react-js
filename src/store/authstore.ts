@@ -46,7 +46,7 @@ export const useAuthStore = create<AuthState>()(
             id: userCredential.user.uid,
             email,
             name,
-            role: email === 'health@gmail.com' ? 'admin' : 'user',
+            role: email === 'healthy@gmail.com' ? 'admin' : 'user',
             phone,
             createdAt: new Date(),
           };

@@ -1,14 +1,19 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Lock, LogIn } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authstore';
 import { useAppStore } from '../store/appStore';
+import { signInSchema, type SignInFormData } from '../lib/validations';
 
 export const SignIn = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [formData, setFormData] = useState<SignInFormData>({
+    email: '',
+    password: '',
+  });
+  const [errors, setErrors] = useState<Partial<SignInFormData>>({});
   const [loading, setLoading] = useState(false);
   const { login } = useAuthStore();
   const { settings } = useAppStore();
@@ -16,16 +21,40 @@ export const SignIn = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setErrors({});
     setLoading(true);
 
-    const success = await login(email, password);
-    if (success) {
-      navigate('/');
-    } else {
-      setError('Invalid email or password');
+    try {
+      const validatedData = signInSchema.parse(formData);
+      
+      const success = await login(validatedData.email, validatedData.password);
+      if (success) {
+        toast.success('Welcome back! 😊');
+        navigate('/');
+      } else {
+        toast.error('Invalid email or password. Please try again.');
+      }
+    } catch (error: any) {
+      if (error.errors) {
+        const fieldErrors: Partial<SignInFormData> = {};
+        error.errors.forEach((err: any) => {
+          if (err.path[0]) {
+            fieldErrors[err.path[0] as keyof SignInFormData] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+        toast.error('Please fix the form errors');
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   return (
@@ -48,12 +77,6 @@ export const SignIn = () => {
           </p>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
-            {error}
-          </div>
-        )}
-
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className={`block text-sm font-medium mb-2 ${
@@ -65,9 +88,11 @@ export const SignIn = () => {
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
                 className={`w-full pl-10 pr-4 py-3 rounded-xl border ${
+                  errors.email ? 'border-red-500' :
                   settings.darkMode
                     ? 'bg-gray-700 border-gray-600 text-white'
                     : 'bg-white border-gray-300'
@@ -76,6 +101,9 @@ export const SignIn = () => {
                 required
               />
             </div>
+            {errors.email && (
+              <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+            )}
           </div>
 
           <div>
@@ -88,9 +116,11 @@ export const SignIn = () => {
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
                 className={`w-full pl-10 pr-4 py-3 rounded-xl border ${
+                  errors.password ? 'border-red-500' :
                   settings.darkMode
                     ? 'bg-gray-700 border-gray-600 text-white'
                     : 'bg-white border-gray-300'
@@ -99,6 +129,9 @@ export const SignIn = () => {
                 required
               />
             </div>
+            {errors.password && (
+              <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+            )}
           </div>
 
           <button

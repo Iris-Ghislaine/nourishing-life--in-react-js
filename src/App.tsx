@@ -1,12 +1,13 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { Header } from './components/Header';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { Home } from './pages/Home';
 import { SignIn } from './pages/SignIn';
 import { SignUp } from './pages/SignUp';
 import { DiseaseLanding } from './pages/DiseaseLanding';
 import { Settings } from './pages/Settings';
 import { FAQ } from './pages/FAQ';
-
 import { Rating } from './pages/Rating';
 import { AdminDashboard } from './pages/AdminDashboard';
 import {useAuthStore} from './store/authstore'
@@ -44,37 +45,69 @@ function App() {
   return (
     <Router>
       <div className={settings.darkMode ? 'dark' : ''}>
-        {isAuthenticated && <Header />}
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: settings.darkMode ? '#1F2937' : '#FFFFFF',
+              color: settings.darkMode ? '#FFFFFF' : '#000000',
+              border: settings.darkMode ? '1px solid #374151' : '1px solid #E5E7EB',
+            },
+          }}
+        />
+        <Header />
         <Routes>
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
-          <Route
-            path="/"
-            element={isAuthenticated ? <Home /> : <Navigate to="/signin" />}
-          />
+          <Route path="/" element={<Home />} />
           <Route
             path="/disease/:diseaseId"
-            element={isAuthenticated ? <DiseaseLanding /> : <Navigate to="/signin" />}
+            element={
+              <ProtectedRoute>
+                <DiseaseLanding />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/settings"
-            element={isAuthenticated ? <Settings /> : <Navigate to="/signin" />}
+            element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/faq"
-            element={isAuthenticated ? <FAQ /> : <Navigate to="/signin" />}
+            element={
+              <ProtectedRoute>
+                <FAQ />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/about"
-            element={isAuthenticated ? <About /> : <Navigate to="/signin" />}
+            element={
+              <ProtectedRoute>
+                <About />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/rating"
-            element={isAuthenticated ? <Rating /> : <Navigate to="/signin" />}
+            element={
+              <ProtectedRoute>
+                <Rating />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/admin"
-            element={isAuthenticated ? <AdminDashboard /> : <Navigate to="/signin" />}
+            element={
+              <ProtectedRoute>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
           />
         </Routes>
       </div>

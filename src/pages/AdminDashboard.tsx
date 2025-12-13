@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { motion } from 'framer-motion';
-import { Users, Activity, Heart, Plus, MessageSquare, Reply } from 'lucide-react';
+import { Plus, MessageSquare, Reply } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { collection, getDocs, query, orderBy, updateDoc, doc, addDoc, where } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, updateDoc, doc, addDoc} from 'firebase/firestore';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useAuthStore } from '../store/authstore';
 import { useAppStore } from '../store/appStore';
@@ -29,14 +30,40 @@ export const AdminDashboard = () => {
     feedback: [] as any[]
   });
 
-  const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444'];
+  // const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444'];
 
   const fetchStats = async () => {
     try {
-      // Get all users
-      const usersSnapshot = await getDocs(collection(db, 'users'));
-      const totalUsers = usersSnapshot.size;
-      console.log('Total users from Firebase:', totalUsers);
+      // Get all users - ensure we're querying the correct collection
+      try {
+        const usersCollection = collection(db, 'users');
+        const usersSnapshot = await getDocs(usersCollection);
+        const totalUsers = usersSnapshot.size;
+        console.log('Users collection exists:', !usersSnapshot.empty);
+        console.log('Total users from Firebase:', totalUsers);
+        console.log('User docs:', usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        
+        if (totalUsers === 0) {
+          console.warn('No users found in Firebase. Make sure users are being saved to the "users" collection.');
+        }
+        
+        setStats({
+          totalUsers,
+          activeUsers: totalUsers,
+          totalDiseases: diseases.length,
+          totalMeals: allMeals.length,
+        });
+      } catch (userError) {
+        console.error('Error fetching users:', userError);
+        const totalUsers = 0;
+        
+        setStats({
+          totalUsers,
+          activeUsers: totalUsers,
+          totalDiseases: diseases.length,
+          totalMeals: allMeals.length,
+        });
+      }
       
       // Get feedback data
       const feedbackQuery = query(collection(db, 'feedback'), orderBy('createdAt', 'desc'));
@@ -56,17 +83,12 @@ export const AdminDashboard = () => {
       const pendingFeedback = feedbackData.filter(f => f.status === 'pending').length;
       const repliedFeedback = feedbackData.filter(f => f.status === 'replied').length;
       
-      setStats({
-        totalUsers,
-        activeUsers: totalUsers, // For now, consider all users as active
-        totalDiseases: diseases.length,
-        totalMeals: allMeals.length,
-      });
+
       
       // Prepare chart data
       setChartData({
         overview: [
-          { name: 'Users', value: totalUsers, color: '#10B981' },
+          { name: 'Users', value: stats.totalUsers, color: '#10B981' },
           { name: 'Diseases', value: diseases.length, color: '#3B82F6' },
           { name: 'Meals', value: allMeals.length, color: '#F59E0B' },
           { name: 'Feedback', value: feedbackData.length, color: '#EF4444' }

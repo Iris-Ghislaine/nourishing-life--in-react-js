@@ -7,7 +7,7 @@ import { useAuthStore } from '../store/authstore';
 
 export const Header = () => {
   const { settings, toggleDarkMode } = useAppStore();
-  const { user, logout } = useAuthStore();
+  const { user, logout, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -30,22 +30,26 @@ export const Header = () => {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
             <Link to="/" className="hover:text-green-600 transition">Home</Link>
-            <Link to="/faq" className="hover:text-green-600 transition">FAQ</Link>
-            <Link to="/about" className="hover:text-green-600 transition">About</Link>
-            <Link to="/rating" className="hover:text-green-600 transition">Rate Us</Link>
-            {user?.role === 'admin' && (
-              <Link to="/admin" className="hover:text-green-600 transition">Dashboard</Link>
+            {isAuthenticated && (
+              <>
+                <Link to="/faq" className="hover:text-green-600 transition">FAQ</Link>
+                <Link to="/about" className="hover:text-green-600 transition">About</Link>
+                <Link to="/rating" className="hover:text-green-600 transition">Rate Us</Link>
+                {user?.role === 'admin' && (
+                  <Link to="/admin" className="hover:text-green-600 transition">Dashboard</Link>
+                )}
+                <Link to="/settings" className="hover:text-green-600 transition">
+                  <User className="w-5 h-5" />
+                </Link>
+              </>
             )}
-            <Link to="/settings" className="hover:text-green-600 transition">
-              <User className="w-5 h-5" />
-            </Link>
             <button
               onClick={toggleDarkMode}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
             >
               {settings.darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
-            {user && (
+            {isAuthenticated ? (
               <button
                 onClick={handleLogout}
                 className="flex items-center space-x-2 text-red-600 hover:text-red-700 transition"
@@ -53,6 +57,13 @@ export const Header = () => {
                 <LogOut className="w-5 h-5" />
                 <span>Logout</span>
               </button>
+            ) : (
+              <Link
+                to="/signup"
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+              >
+                Get Started
+              </Link>
             )}
           </nav>
 
@@ -69,13 +80,17 @@ export const Header = () => {
         {menuOpen && (
           <nav className="md:hidden mt-4 space-y-2 pb-4">
             <Link to="/" className="block py-2 hover:text-green-600 transition">Home</Link>
-            <Link to="/faq" className="block py-2 hover:text-green-600 transition">FAQ</Link>
-            <Link to="/about" className="block py-2 hover:text-green-600 transition">About</Link>
-            <Link to="/rating" className="block py-2 hover:text-green-600 transition">Rate Us</Link>
-            {user?.role === 'admin' && (
-              <Link to="/admin" className="block py-2 hover:text-green-600 transition">Dashboard</Link>
+            {isAuthenticated && (
+              <>
+                <Link to="/faq" className="block py-2 hover:text-green-600 transition">FAQ</Link>
+                <Link to="/about" className="block py-2 hover:text-green-600 transition">About</Link>
+                <Link to="/rating" className="block py-2 hover:text-green-600 transition">Rate Us</Link>
+                {user?.role === 'admin' && (
+                  <Link to="/admin" className="block py-2 hover:text-green-600 transition">Dashboard</Link>
+                )}
+                <Link to="/settings" className="block py-2 hover:text-green-600 transition">Settings</Link>
+              </>
             )}
-            <Link to="/settings" className="block py-2 hover:text-green-600 transition">Settings</Link>
             <button
               onClick={toggleDarkMode}
               className="flex items-center space-x-2 py-2"
@@ -92,7 +107,7 @@ export const Header = () => {
                 </>
               )}
             </button>
-            {user && (
+            {isAuthenticated ? (
               <button
                 onClick={handleLogout}
                 className="flex items-center space-x-2 text-red-600 py-2"
@@ -100,6 +115,13 @@ export const Header = () => {
                 <LogOut className="w-5 h-5" />
                 <span>Logout</span>
               </button>
+            ) : (
+              <Link
+                to="/signup"
+                className="block bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-center"
+              >
+                Get Started
+              </Link>
             )}
           </nav>
         )}
